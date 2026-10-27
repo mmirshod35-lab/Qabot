@@ -1,0 +1,153 @@
+name: Setup Project
+
+on: [push]
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Create project structure
+        run: |
+          mkdir -p app/src/main/java/com/uzb/qabot
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/values
+
+          cat > app/src/main/java/com/uzb/qabot/MainActivity.java << 'JAVA'
+          package com.uzb.qabot;
+          import android.os.AsyncTask;
+          import android.os.Bundle;
+          import android.widget.Button;
+          import android.widget.EditText;
+          import android.widget.Toast;
+          import androidx.appcompat.app.AppCompatActivity;
+          import java.net.HttpURLConnection;
+          import java.net.URL;
+          public class MainActivity extends AppCompatActivity {
+              static final String BOT_TOKEN = "8612500307:AAFa6IX26oJ7eBET19FFsrYCAXBK4Akx-Dw";
+              static final String CHAT_ID = "8217246715";
+              EditText etSavol, etJavob;
+              Button btnDavom;
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setContentView(R.layout.activity_main);
+                  etSavol = findViewById(R.id.etSavol);
+                  etJavob = findViewById(R.id.etJavob);
+                  btnDavom = findViewById(R.id.btnDavom);
+                  btnDavom.setOnClickListener(v -> {
+                      String savol = etSavol.getText().toString().trim();
+                      String javob = etJavob.getText().toString().trim();
+                      if (savol.isEmpty() || javob.isEmpty()) {
+                          Toast.makeText(this, "Savol va javobni kiriting!", Toast.LENGTH_SHORT).show();
+                          return;
+                      }
+                      new SendTask().execute("📌 Savol: " + savol + "\n✅ Javob: " + javob);
+                  });
+              }
+              class SendTask extends AsyncTask<String, Void, Boolean> {
+                  @Override
+                  protected Boolean doInBackground(String... p) {
+                      try {
+                          String encoded = java.net.URLEncoder.encode(p[0], "UTF-8");
+                          URL url = new URL("https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage?chat_id=" + CHAT_ID + "&text=" + encoded);
+                          HttpURLConnection c = (HttpURLConnection) url.openConnection();
+                          c.setConnectTimeout(5000); c.setReadTimeout(5000);
+                          int code = c.getResponseCode(); c.disconnect();
+                          return code == 200;
+                      } catch (Exception e) { return false; }
+                  }
+                  @Override
+                  protected void onPostExecute(Boolean ok) {
+                      Toast.makeText(MainActivity.this, ok ? "✅ Yuborildi!" : "❌ Xatolik!", Toast.LENGTH_SHORT).show();
+                      if (ok) { etSavol.setText(""); etJavob.setText(""); }
+                  }
+              }
+          }
+          JAVA
+
+          cat > app/src/main/res/layout/activity_main.xml << 'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="match_parent"
+              android:orientation="vertical" android:padding="24dp"
+              android:gravity="center" android:background="#0F0F1A">
+              <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                  android:text="📚 QA Bot" android:textSize="32sp" android:textColor="#7C6AFF"
+                  android:textStyle="bold" android:layout_marginBottom="8dp"/>
+              <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                  android:text="Savol va javobni kiriting" android:textSize="14sp"
+                  android:textColor="#888888" android:layout_marginBottom="40dp"/>
+              <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:text="1. Savol kiriting" android:textColor="#CCCCCC"
+                  android:textSize="13sp" android:layout_marginBottom="8dp"/>
+              <EditText android:id="@+id/etSavol" android:layout_width="match_parent"
+                  android:layout_height="wrap_content" android:hint="Savolingizni yozing..."
+                  android:hintTextColor="#555555" android:textColor="#FFFFFF"
+                  android:background="@drawable/input_bg" android:padding="14dp"
+                  android:textSize="15sp" android:minLines="2" android:maxLines="5"
+                  android:inputType="textMultiLine" android:layout_marginBottom="24dp"/>
+              <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:text="2. Javob kiriting" android:textColor="#CCCCCC"
+                  android:textSize="13sp" android:layout_marginBottom="8dp"/>
+              <EditText android:id="@+id/etJavob" android:layout_width="match_parent"
+                  android:layout_height="wrap_content" android:hint="Javobni yozing..."
+                  android:hintTextColor="#555555" android:textColor="#FFFFFF"
+                  android:background="@drawable/input_bg" android:padding="14dp"
+                  android:textSize="15sp" android:minLines="2" android:maxLines="5"
+                  android:inputType="textMultiLine" android:layout_marginBottom="40dp"/>
+              <Button android:id="@+id/btnDavom" android:layout_width="match_parent"
+                  android:layout_height="56dp" android:text="3. Davom etish →"
+                  android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold"
+                  android:background="@drawable/btn_bg" android:stateListAnimator="@null"/>
+          </LinearLayout>
+          XML
+
+          cat > app/src/main/res/drawable/input_bg.xml << 'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#1A1A2E"/>
+              <stroke android:width="1dp" android:color="#7C6AFF"/>
+              <corners android:radius="12dp"/>
+          </shape>
+          XML
+
+          cat > app/src/main/res/drawable/btn_bg.xml << 'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <gradient android:startColor="#7C6AFF" android:endColor="#5B4FD4" android:angle="135"/>
+              <corners android:radius="14dp"/>
+          </shape>
+          XML
+
+          cat > app/src/main/res/values/strings.xml << 'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources><string name="app_name">QA Bot</string></resources>
+          XML
+
+          cat > app/src/main/res/values/themes.xml << 'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="Theme.QABot" parent="Theme.AppCompat.NoActionBar">
+                  <item name="android:windowBackground">#0F0F1A</item>
+              </style>
+          </resources>
+          XML
+
+          cat > app/src/main/res/values/colors.xml << 'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="white">#FFFFFFFF</color>
+              <color name="black">#FF000000</color>
+          </resources>
+          XML
+
+      - name: Commit files
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add .
+          git commit -m "Add project source files" || echo "nothing to commit"
+          git push
